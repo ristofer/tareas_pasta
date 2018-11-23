@@ -259,8 +259,8 @@ class Simulacion(object):
             self.mat_num.append(aux)
         
         
-sim = Simulacion(x=40,y=400,q_0=0,t_ext=370,t_int=280,t_suelo=280,k=1,k_suelo=0,h_izq=0.001,h_der=0.001)
-for i in range(10000):
+sim = Simulacion(x=40,y=400,q_0=1000,t_ext=370,t_int=280,t_suelo=280,k=1,k_suelo=0,h_izq=0.001,h_der=0.001)
+for i in range(1000):
     sim.test()
 plt.figure(1)
 sim.plotito()
