@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import numpy as np
-import sympy as sym
-import copy
 import seaborn as sns
 import matplotlib.pyplot as plt
 sns.set()
@@ -24,7 +22,7 @@ class Simulacion(object):
         self.ecuaciones = []
         self.dy = 2.0/y
         self.dx = 0.01
-        self.t_inicial = 290
+        self.t_inicial = 1000000
         self.width = self.dx * self.x
         self._crearMatriz()
         
@@ -199,6 +197,18 @@ class Simulacion(object):
         temp_teoricas = c1*grilla + c2
         sns.heatmap(temp_teoricas)
         
+    def calcTeorico2(self):
+        pterm1 = self.q_0 + self.h_ext*self.t_ext
+        pterm2 = self.k*(pterm1 + self.h_int*self.t_int)/(self.h_int*self.width)
+        pterm = pterm1 + pterm2
+        sterm = self.k*(self.h_ext+self.h_int)/(self.h_int*self.width) + self.h_ext
+        c2 = pterm/sterm
+        c1 = (pterm1 + self.h_int*self.t_int - c2*(self.h_ext+self.h_int))/(self.h_int*self.width)
+        posiciones = np.linspace(0,self.width,num=self.x)
+        grilla,_ = np.meshgrid(posiciones,posiciones)
+        temp_teoricas = c1*grilla + c2
+        sns.heatmap(temp_teoricas)
+        
    
     def test(self):
         y = self.y
@@ -266,7 +276,8 @@ plt.figure(1)
 sim.plotito()
 plt.figure(2)
 sim.calcTeorico()
-
+plt.figure(3)
+sim.calcTeorico2()
 
 
 
