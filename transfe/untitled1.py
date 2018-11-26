@@ -7,8 +7,9 @@ sns.set()
 
 class Simulacion(object):
     
-    def __init__(self,x,y,q_0,t_ext,t_int,t_suelo,k,k_suelo,h_izq,h_der):
+    def __init__(self,x,y,q_0,t_ext,t_int,t_suelo,k,k_suelo,h_izq,h_der,espesor):
         self.x = x
+        self.width = espesor
         self.y = y
         self.q_0 = q_0
         self.t_ext = t_ext
@@ -21,9 +22,8 @@ class Simulacion(object):
         self.temp_nodos = []
         self.ecuaciones = []
         self.dy = 2.0/y
-        self.dx = 0.01
-        self.t_inicial = 1000000
-        self.width = self.dx * self.x
+        self.dx = self.width/x
+        self.t_inicial = 288
         self._crearMatriz()
         
         
@@ -105,8 +105,9 @@ class Simulacion(object):
         q_0 = 0
         dp = self.dy
         ds = self.dx
-        self.temp_nodos[i,j] = self.calcTempEsquina(temp,t_p,t_s,t_conv,k,h,q_0,dp,ds,t_suelo=self.t_suelo)
-
+        #self.temp_nodos[i,j] = self.calcTempEsquina(temp,t_p,t_s,t_conv,k,h,q_0,dp,ds,t_suelo=self.t_suelo)
+        self.temp_nodos[i,j] = self.t_suelo
+        
     def calcTempEsquinaIzqAba(self,i,j):
         temp = self.temp_nodos[i,j]
         t_p = self.temp_nodos[i,j+1]
@@ -117,8 +118,9 @@ class Simulacion(object):
         q_0 = self.q_0
         dp = self.dy
         ds = self.dx
-        self.temp_nodos[i,j] = self.calcTempEsquina(temp,t_p,t_s,t_conv,k,h,q_0,dp,ds,t_suelo=self.t_suelo)
-
+        #self.temp_nodos[i,j] = self.calcTempEsquina(temp,t_p,t_s,t_conv,k,h,q_0,dp,ds,t_suelo=self.t_suelo)
+        self.temp_nodos[i,j] = self.t_suelo
+        
     def calcTempPared(self,temp,t_p,t_s1,t_s2,t_conv,k,h,q_0,dp,ds,t_suelo=0,k_suelo=None):
         coef_conv = h*(dp**2)*ds
         coef_kp = k*(dp**2)
@@ -183,9 +185,9 @@ class Simulacion(object):
         q_0 = 0
         dp = self.dx
         ds = self.dy
-        self.temp_nodos[i,j] = self.calcTempPared(temp,t_p,t_s1,t_s2,t_conv,k,h,q_0,dp,ds,k_suelo=self.k_suelo,t_suelo=self.t_suelo)
+        #self.temp_nodos[i,j] = self.calcTempPared(temp,t_p,t_s1,t_s2,t_conv,k,h,q_0,dp,ds,k_suelo=self.k_suelo,t_suelo=self.t_suelo)
         #self.temp_nodos[i,j] = self.calcProm(t_p,t_s1,t_s2,self.t_suelo)
-        #self.temp_nodos[i,j] = self.t_suelo
+        self.temp_nodos[i,j] = self.t_suelo
         
     def calcTeorico(self):
         pterm = self.t_int - self.t_ext - self.q_0/self.h_ext
@@ -269,7 +271,8 @@ class Simulacion(object):
             self.mat_num.append(aux)
         
         
-sim = Simulacion(x=40,y=400,q_0=1000,t_ext=370,t_int=280,t_suelo=280,k=1,k_suelo=0,h_izq=0.001,h_der=0.001)
+sim = Simulacion(x=40,y=400,q_0=1000,t_ext=370,t_int=280,t_suelo=280,k=0.16,k_suelo=0.16,h_izq=0.001,h_der=0.001,espesor=0.15)
+
 for i in range(1000):
     sim.test()
 plt.figure(1)
@@ -278,6 +281,46 @@ plt.figure(2)
 sim.calcTeorico()
 plt.figure(3)
 sim.calcTeorico2()
+
+radiaciones = [0,99,911,700] #w/m2
+temperaturas = [15,11,22,24] #grados celcius
+viento = np.array([2,2,3,3]) #m/s
+temperaturas_casa = [10,7,17,19]
+temperaturas = [n+273.15 for n in temperaturas]
+temperaturas_casa = [n+273.15 for n in temperaturas_casa]
+espesores = [0.08,0.12,0.30,0.60]
+xs = [int(n/0.001) for n in espesores]
+
+densidades = [1.225,1.246,1.204,1.184]
+visco_cine = [1.470,1.426,1.516,1.562]
+visco_cine = np.array([n*(10**-5) for n in visco_cine])
+reynolds = viento*2.0/visco_cine
+prandt = np.array([0.7323,0.7336,0.7309,0.7296])
+k_aire = np.array([0.02476,0.02439,0.02514,0.02551])
+nusselt = 0.664 * reynolds**(1/2) * prandt**(1/3)
+hs = nusselt*k_aire/2.0
+mallasx = [20,200,2000,1000]
+mallasy = [40,100,2000,4000]
+count = 1
+for i,r in enumerate(radiaciones):
+    for j,s in enumerate(mallasx):
+        for n,l in enumerate(espesores):
+            sim = Simulacion(x=mallasx[j],y=mallasy[j],q_0=radiaciones[i],t_ext=temperaturas[i],t_int=temperaturas_casa[i],t_suelo=273.15+15,k=0.16,k_suelo=0.16,h_izq=hs[i],h_der=0.5,espesor=espesores[n])
+            for c in range(1000):
+                sim.test()
+                print(c)
+            count += 1
+            plt.figure(count)
+            count += 1
+            sim.plotito()
+            plt.savefig("simulado-{}-{}-{}.png".format(i,j,n))
+            plt.figure(count)
+            count += 1
+            sim.calcTeorico()
+            plt.savefig("teorico-{}-{}-{}.png".format(i,j,n))
+            plt.figure(count)
+            sim.calcTeorico2()
+            plt.savefig("teorico2-{}-{}-{}.png".format(i,j,n))
 
 
 
