@@ -246,8 +246,6 @@ class Simulacion(object):
     def plotito(self):
         sns.heatmap(self.temp_nodos)
                     
-                
-#                    
 #    def main(self):
 #        self._crearMatriz()
 #        self._generarEcuaciones()
@@ -269,18 +267,6 @@ class Simulacion(object):
             for j,temp in enumerate(arr):
                 aux.append(float(self.valores.get(self.temp_nodos[i][j]).evalf()))
             self.mat_num.append(aux)
-        
-        
-sim = Simulacion(x=40,y=400,q_0=1000,t_ext=370,t_int=280,t_suelo=280,k=0.16,k_suelo=0.16,h_izq=0.001,h_der=0.001,espesor=0.15)
-
-for i in range(1000):
-    sim.test()
-plt.figure(1)
-sim.plotito()
-plt.figure(2)
-sim.calcTeorico()
-plt.figure(3)
-sim.calcTeorico2()
 
 radiaciones = [0,99,911,700] #w/m2
 temperaturas = [15,11,22,24] #grados celcius
@@ -299,28 +285,23 @@ prandt = np.array([0.7323,0.7336,0.7309,0.7296])
 k_aire = np.array([0.02476,0.02439,0.02514,0.02551])
 nusselt = 0.664 * reynolds**(1/2) * prandt**(1/3)
 hs = nusselt*k_aire/2.0
-mallasx = [20,200,2000,1000]
-mallasy = [40,100,2000,4000]
+mallasx = [20,200,600,1000]
+mallasy = [40,400,600,1400]
 count = 1
-for i,r in enumerate(radiaciones):
-    for j,s in enumerate(mallasx):
+for j,s in enumerate(mallasx):
+    for i,r in enumerate(radiaciones):
         for n,l in enumerate(espesores):
-            sim = Simulacion(x=mallasx[j],y=mallasy[j],q_0=radiaciones[i],t_ext=temperaturas[i],t_int=temperaturas_casa[i],t_suelo=273.15+15,k=0.16,k_suelo=0.16,h_izq=hs[i],h_der=0.5,espesor=espesores[n])
-            for c in range(1000):
+            sim = Simulacion(x=mallasx[j],y=mallasy[j],q_0=radiaciones[i],t_ext=temperaturas[i],t_int=temperaturas_casa[i],t_suelo=273.15+15,k=0.46,k_suelo=0.46,h_izq=hs[i],h_der=3,espesor=espesores[n])
+            for c in range(2000):
                 sim.test()
                 print(c)
             count += 1
             plt.figure(count)
             count += 1
             sim.plotito()
+            plt.title("Temperatura en pared de espesor {}".format(espesores[n]))
             plt.savefig("simulado-{}-{}-{}.png".format(i,j,n))
             plt.figure(count)
-            count += 1
-            sim.calcTeorico()
-            plt.savefig("teorico-{}-{}-{}.png".format(i,j,n))
-            plt.figure(count)
-            sim.calcTeorico2()
-            plt.savefig("teorico2-{}-{}-{}.png".format(i,j,n))
 
 
 
